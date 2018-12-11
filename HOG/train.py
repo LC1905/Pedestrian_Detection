@@ -45,22 +45,22 @@ def feature_extraction(split, rload = True, save = True):
 	if split == "pos":
 		y = np.ones(X.shape[0])
 	else:
-		y = np.zeros(X.shape[1])
+		y = np.zeros(X.shape[0])
 
 	return X, y
 
 
-def train_model(rload = True, save = True):
-	model_path = "model.p"
+def train_model(model_path = "model.p", rload = True, save = True):
 	if os.path.exists(model_path) and rload:
 		model = pickle.load(open(model_path, "rb"))
 		return model
 
 	pos_X, pos_y = feature_extraction("pos")
 	neg_X, neg_y = feature_extraction("neg")
-	X = np.concatenate(pos_X, neg_X)
-	y = np.concatenate(pos_y, neg_y)
-	model = LinearSVC(c = 0.01)
+	X = np.concatenate([pos_X, neg_X])
+	y = np.concatenate([pos_y, neg_y])
+	print("shape of X: {}, shape of y: {}".format(X.shape, y.shape))
+	model = LinearSVC(C = 0.01)
 	print("train model...")
 	model.fit(X, y)
 	if save:
