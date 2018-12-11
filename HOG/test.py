@@ -51,7 +51,7 @@ def test_feature_extraction(split, rload = True, save = True):
 	return X, y
 
 def meta_statistics(predict, label):
-	print("getting statistics...")
+	print("-" * 32 + "STATISTICS" + "-" * 32)
 	assert predict.shape == label.shape
 	tp, fp, tn, fn = 0, 0, 0, 0
 	true_pos, false_pos, true_neg, false_neg = [], [], [], []
@@ -71,8 +71,12 @@ def meta_statistics(predict, label):
 				true_pos.append(i)
 				tp += 1
 
-	print("correctness: {}".format((tn + tp) / predict.shape[0]))
+	correctness = ((tn + tp) / predict.shape[0]) * 100
+	print("correctness: {}%".format(round(correctness, 2)))
+	precision, recall = (tp / (tp + fp)) * 100, (tp / (tp + fn)) * 100
+	print("precision: {}%, recall: {}%".format(round(precision, 2), round(recall, 2)))
 	print("tp: {}, fp: {}, tn: {}, fn: {}".format(tp, fp, tn, fn))
+	print("-" * 75)
 	return true_pos, false_pos, true_neg, false_neg
 
 

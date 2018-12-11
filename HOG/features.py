@@ -84,7 +84,6 @@ def HOG(window, cell_size = 8, block_size = 16, stride = 8, num_bin = 9):
 	for bi in range(0, mag.shape[0] - stride, stride):
 		for bj in range(0, mag.shape[1] - stride, stride):
 			ci, cj = bi // cell_size, bj // cell_size
-			#print("ci: {}, cj: {}".format(ci, cj)) 
 			feature = contrast_normalization(np.concatenate\
 				([cell_f[ci][cj], cell_f[ci][cj + 1],\
 				cell_f[ci + 1][cj], cell_f[ci + 1][cj + 1]]))
@@ -92,3 +91,10 @@ def HOG(window, cell_size = 8, block_size = 16, stride = 8, num_bin = 9):
 	return np.concatenate(features)
 
 
+# TODO: Visualize HO
+def visualize_HOG(window):
+	mag, theta = gradient(window)
+	ori = bin_gradient(theta)
+	features = []
+	cell_rows = mag.shape[0] // cell_size
+	cell_cols = mag.shape[1] // cell_size
