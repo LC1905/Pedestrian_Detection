@@ -70,7 +70,7 @@ def HOG(window, cell_size = 8, block_size = 16, stride = 8, num_bin = 9):
 	cell_cols = mag.shape[1] // cell_size
 	#print("cell_rows: {}, cell_cols: {}".format(cell_rows, cell_cols))
 
-	# vote
+	# vote, each 8 * 8 cell is associated with a (9,) feature vector
 	cell_f = np.zeros((cell_rows, cell_cols, num_bin))
 	for i in range(cell_rows):
 		for j in range(cell_cols):
@@ -80,9 +80,10 @@ def HOG(window, cell_size = 8, block_size = 16, stride = 8, num_bin = 9):
 					y = cell_size * j + oj
 					cell_f[i][j][ori[x][y]] += mag[x][y]
 
-	# normalize; this part might need to be generalized
-	for bi in range(0, mag.shape[0] - stride, stride):
-		for bj in range(0, mag.shape[1] - stride, stride):
+	# normalize, this part might need to be generalized
+	for bi in range(0, mag.shape[0] - block_size + 1, stride):
+		for bj in range(0, mag.shape[1] - block_size + 1, stride):
+			#print("bi: {}, bj: {}".format(bi // stride, bj // stride))
 			ci, cj = bi // cell_size, bj // cell_size
 			feature = contrast_normalization(np.concatenate\
 				([cell_f[ci][cj], cell_f[ci][cj + 1],\

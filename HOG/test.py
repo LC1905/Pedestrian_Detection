@@ -110,32 +110,76 @@ def get_boarder(isize, r, c, wsize = (128, 64), width = 2):
 	return boarder
 
 
-def recognize(filename, model_path = "model.p", stride = 64, isize = (320, 240), wsize = (128, 64), width = 2):
+def recognize(filename, model_path = "model.p", stride = 64, \
+	level = 3, wsize = (128, 64), width = 2,
+	block_size = 16, block_stride = 8, isize = (320, 240)):
+
 	assert os.path.exists(model_path)
 	assert os.path.exists(filename)
 	model = pickle.load(open(model_path, "rb"))
+	#img = load_image(filename, crop = False)
 	img = Image.open(filename).resize(isize)
 	img = np.array(img) / 255
 	print("image size: {}".format(img.shape))
 
-	offsets = [(r, c) for r in range(0, img.shape[0] - wsize[0], stride) \
-			for c in range(0, img.shape[1] - wsize[1], stride)]
+	offsets = [(r, c) for r in range(0, img.shape[0] - wsize[0] + 1, stride) \
+			for c in range(0, img.shape[1] - wsize[1] + 1, stride)]
+	print("number of windows: {}".format(len(offsets)))
+
+	'''
+	### visualize all blocks
+	
+	boarders = []
+	for r, c in offsets:
+		boarders += get_boarder(img.shape, r, c, width = width)
+	for r, c in boarders[:]:
+		if 0 <= r < img.shape[0] and 0 <= c < img.shape[1]:
+			img[r][c] = [1, 0, 0]
+	return img
+	'''
+	
+	r_blocks = (img.shape[0] - block_size) // block_stride + 1
+	c_blocks = (img.shape[1] - block_size) // block_stride + 1 
+	print("rblocks: {}, cblocks: {}".format(r_blocks, c_blocks))
 
 	print("extract features...")
-	# TODO: more efficient feature extraction
-	features = [HOG(img[cood[0] : cood[0] + wsize[0], cood[1] : cood[1] + wsize[1]]) \
-			for cood in offsets]
+	features = HOG(img)
+	features = features.reshape((r_blocks, c_blocks, 36))
+
+	### Previous computation of feature vectors
+	#detect_features = [HOG(img[cood[0] : cood[0] + wsize[0], cood[1] : cood[1] + wsize[1]]) \
+			#for cood in offsets]
+	
+	r_inc = wsize[0] // block_stride - 1
+	c_inc = wsize[1] // block_stride - 1
 
 	print("predict...")
-	pred = model.predict(features)
+	detect_features = []
+	for r, c in offsets:
+		block_left, block_top = c // block_stride, r // block_stride
+		block_right, block_but = block_left + c_inc, block_top + r_inc
+		#print("block left: {}, block top: {}".format(block_left, block_top))
+		#print("block right: {}, block buttom: {}".format(block_right, block_but))
+		feature = features[block_top : block_but, block_left : block_right, :].flatten()
+		detect_features.append(feature)
+
+	detect_features = np.array(detect_features)
+	print("shape of detect_features: {}".format(detect_features.shape))
+
+	detect_features = np.array(detect_features)
+	pred = model.predict(detect_features)
 
 	print("detect...")
 	boarders = []
+	corners = []
 	for i, p in enumerate(pred):
 		if p == 1:
-			r, c = offsets[i][0], offsets[i][1]
-			print("AHA: {}, {}".format(r, c))
+			r, c = offsets[i][0], offsets[i][1] # top-left
+			r2, c2 = r + wsize[0], c + wsize[1] # but-right
+			corners.append((r, c, r2, c2))
 			boarders += get_boarder(img.shape, r, c, width = width)
+
+	print("detected corners: {}".format(corners))
 	for r, c in boarders:
 		img[r][c] = [1, 0, 0]
 	return img
