@@ -9,7 +9,7 @@ def load_image(filename, crop = True):
 	Load an rgb image and crop the central part if required
 	'''
 	img = imageio.imread(filename)[:, :, :3] 
-	#img = img / 255
+	img = img / 255
 	if crop:
 		row, col = img.shape[0], img.shape[1]
 		row_off, col_off = (row - 128) // 2, (col - 64) // 2
