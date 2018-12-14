@@ -12,8 +12,8 @@ PATH = "../INRIAPerson/test_64x128_H96"
 TEST_DIR = "../INRIAPerson/Test"
 #ASCII = (32, 128)
 
-pos_dir = "test_pos"
-neg_dir = "test_neg"
+pos_dir = "test_pos_1.2"
+neg_dir = "test_neg_1.2"
 
 def add_level_to_path(save_path, l):
 	level_path = save_path.split(".")
@@ -57,7 +57,7 @@ def precision_recall_test(rload = True, level = 2, ratio = (2, 2), model_path = 
 	pos_list = open(os.path.join(TEST_DIR, "pos.lst"), "r")
 	neg_list = open(os.path.join(TEST_DIR, "neg.lst"), "r")
 
-	top_k, threshold, nonmax = None, 0.5, True
+	top_k, threshold, nonmax = None, 0, True
 	print("top_k: {}, threshold: {}, nonmax: {}".format(top_k, threshold, nonmax))
 	
 	print("test on positive examples")
@@ -73,14 +73,14 @@ def precision_recall_test(rload = True, level = 2, ratio = (2, 2), model_path = 
 			#continue
 		all_features = []
 		level_path = add_level_to_path(save_path, 0)
-		if os.path.exists(level_path):
+		if os.path.exists(level_path) and rload:
 			#print("reload image features...")
 			for l in range(level + 1):
 				level_path = add_level_to_path(save_path, l)
 				features = np.load(level_path)
 				all_features.append(features)
 		else:
-			all_features = load_image_features(img_path, save_path = save_path)
+			all_features = load_image_features(img_path, level = level, ratio = ratio, save_path = save_path)
 			
 		all_shapes = find_shapes(oimg, ratio, level)
 		oimg, corners = detect(model, oimg, all_features, all_shapes, ratio, level, \
@@ -337,7 +337,7 @@ def detect(model, oimg, all_features, all_shapes, ratio, level, \
 	block_stride, wsize, stride, top_k, threshold, nonmax, width):
 	scores = []
 	corners = []
-	for i in range(level):
+	for i in range(level + 1):
 		features = all_features[i]
 		shape = all_shapes[i]
 		scale = (ratio[0] ** (level - i), ratio[1] ** (level - i))
@@ -378,7 +378,7 @@ def detect(model, oimg, all_features, all_shapes, ratio, level, \
 						corners.append((int(r), int(c), int(r2), int(c2)))
 						scores.append(p)
 						#print("AHA: {}".format(corners[-1]))
-				#print("detected corners: {}".format(corners))
+				print("detected corners: {}".format(corners))
 
 			else:
 				scores.append(pred)
@@ -417,7 +417,7 @@ def detect(model, oimg, all_features, all_shapes, ratio, level, \
 	## visualize
 	#print("visualize...")
 	for r, c, r2, c2 in corners:
-		#print("[({}, {}), ({}, {})]".format(r, c, r2, c2))
+		print("[({}, {}), ({}, {})]".format(r, c, r2, c2))
 		oimg[r : r + width, c : c2] = [1, 0, 0]
 		oimg[r2 - width : r2, c : c2] = [1, 0, 0]
 		oimg[r : r2, c : c + width] = [1, 0, 0]
@@ -463,8 +463,9 @@ def recognize(filename, model_path = "model.p", stride = 16, \
 		all_features.append(features)
 	'''
 
-	all_features, all_shapes = load_image_features(filename, level = level, ratio = ratio,\
+	all_features = load_image_features(filename, level = level, ratio = ratio,\
 		wsize = wsize, stride = stride, block_stride = block_stride, block_size = block_size)
+	all_shapes = find_shapes(oimg, ratio, level)
 	#print("all shapes: {}".format(all_shapes))	
 
 	oimg, scores_corners = detect(model, oimg, all_features, all_shapes, ratio, \
