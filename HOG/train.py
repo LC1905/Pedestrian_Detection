@@ -2,6 +2,7 @@ import os
 import glob
 import numpy as np
 import pickle
+import test
 import random
 from features import *
 from utils import *
@@ -67,6 +68,24 @@ def train_model(model_path = "model.p", rload = True, save = True):
 		pickle.dump(model, open(model_path, "wb"))
 
 
-train_model()
+def first_test_train():
+	model = train_model()
+	pos_X, pos_y = feature_extraction("pos")
+	neg_X, neg_y = feature_extraction("neg")
+	X = np.concatenate([pos_X, neg_X])
+	y = np.concatenate([pos_y, neg_y])
+	s = model.score(X, y)
+	print("accuracy: {}".format(s))
 
+'''
+def first_test_test():
+	model = train_model()
+	pos_X, pos_y = test.test_feature_extraction("pos")
+	neg_X, neg_y = test.test_feature_extraction("neg")
+	X = np.concatenate([pos_X, neg_X])
+	y = np.concatenate([pos_y, neg_y])
+	s = model.score(X, y)
+	print("accuracy: {}".format(s))
 
+first_test_test()
+'''
